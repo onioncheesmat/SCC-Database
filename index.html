@@ -28,7 +28,7 @@
 .chip-visual .chip-grid{stroke:#25414b;stroke-width:.8;opacity:.5}
 .chip-visual .chip-flow{fill:none;stroke:#75e0c9;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 3px #75e0c966)}
 .chip-visual .chip-flow.second{stroke:#a0d5ec;opacity:.75;stroke-width:1.4}
-/* v21: guide signal flows left-to-right in mint; sentinel signal flows right-to-left in blue-violet */
+/* v22: guide signal flows left-to-right in mint; sentinel signal flows right-to-left in blue-violet */
 .chip-visual.chip-guide .chip-flow{stroke:#72e6c4;filter:drop-shadow(0 0 4px #72e6c477)}
 .chip-visual.chip-guide .chip-flow.second{stroke:#b2f2d9}
 .chip-visual.chip-guide .chip-node{stroke:#72e6c4}
@@ -155,11 +155,29 @@ function makeChipConnection(p){
  for(let x=15;x<=325;x+=25){const line=document.createElementNS(ns,'line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1','10');line.setAttribute('y2','75');line.setAttribute('class','chip-grid');svg.append(line)}
  const defs=document.createElementNS(ns,'defs'),clip=document.createElementNS(ns,'clipPath');clip.setAttribute('id','chip-wave-clip');const rect=document.createElementNS(ns,'rect');rect.setAttribute('x','47');rect.setAttribute('y','0');rect.setAttribute('width','246');rect.setAttribute('height','86');clip.append(rect);defs.append(clip);svg.append(defs);
  const group=document.createElementNS(ns,'g');group.setAttribute('clip-path','url(#chip-wave-clip)');
+ // A 340px seamless tile with a localized energy pulse. The pulse makes direction unambiguous.
+ // Two identical tiles cover the viewport throughout each translation (no blank sections).
+ const tileWidth=340;
+ const pulse=(u,c,w)=>Math.exp(-Math.pow(Math.sin(Math.PI*(u-c))/w,2));
  for(let k=0;k<2;k++){
   const path=document.createElementNS(ns,'path');path.setAttribute('class','chip-flow'+(k?' second':''));
-  let d='';for(let x=0;x<=680;x+=2){const t=x/340;const y=43+(k?9:0)-(k?7:12)*Math.sin(t*Math.PI*8+.35)-(k?2:3)*Math.sin(t*Math.PI*16+.2);d+=(x===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(2)+' '}
-  path.setAttribute('d',d);const motion=document.createElementNS(ns,'animateTransform');motion.setAttribute('attributeName','transform');motion.setAttribute('type','translate');motion.setAttribute('from',isGuide?'-340 0':'0 0');motion.setAttribute('to',isGuide?'0 0':'-340 0');motion.setAttribute('dur',k?'12s':'10s');motion.setAttribute('repeatCount','indefinite');path.append(motion);group.append(path)
- }svg.append(group);
+  let d='';
+  for(let x=0;x<=tileWidth*2;x+=2){
+   const u=(x%tileWidth)/tileWidth;
+   const envelope=.27+.73*pulse(u,k?.68:.29,k?.18:.15);
+   const y=43+(k?9:0)-(k?7:15)*envelope*Math.sin(2*Math.PI*(k?7:9)*u+.12)
+      -(k?1.3:2.5)*Math.sin(2*Math.PI*(k?3:5)*u+.45);
+   d+=(x===0?'M':'L')+x+' '+y.toFixed(2)+' ';
+  }
+  path.setAttribute('d',d);
+  const motion=document.createElementNS(ns,'animateTransform');
+  motion.setAttribute('attributeName','transform');motion.setAttribute('type','translate');
+  motion.setAttribute('from',isGuide?'-340 0':'0 0');
+  motion.setAttribute('to',isGuide?'0 0':'-340 0');
+  motion.setAttribute('dur',k?'9s':'7s');motion.setAttribute('repeatCount','indefinite');
+  path.append(motion);group.append(path);
+ }
+ svg.append(group);
  for(const [x,t] of [[27,'G'],[313,'S']]){const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',x);circle.setAttribute('cy','43');circle.setAttribute('r','18');circle.setAttribute('class','chip-node');svg.append(circle);const label=document.createElementNS(ns,'text');label.setAttribute('x',x);label.setAttribute('y','47');label.setAttribute('class','chip-label');label.textContent=t;svg.append(label)}
  wrap.append(svg);const cap=elem('div','chip-caption');cap.append(elem('span','','KIM SUNWOO · GUIDE'),elem('span','','PARK SUNGHOON · SENTINEL'));wrap.append(cap);cap.append(elem('span','',isGuide?'GUIDE SIGNAL · LEFT → RIGHT':'SENTINEL SIGNAL · RIGHT → LEFT'));return wrap;
 }

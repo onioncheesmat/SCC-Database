@@ -28,6 +28,14 @@
 .chip-visual .chip-grid{stroke:#25414b;stroke-width:.8;opacity:.5}
 .chip-visual .chip-flow{fill:none;stroke:#75e0c9;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 3px #75e0c966)}
 .chip-visual .chip-flow.second{stroke:#a0d5ec;opacity:.75;stroke-width:1.4}
+/* v21: guide signal flows left-to-right in mint; sentinel signal flows right-to-left in blue-violet */
+.chip-visual.chip-guide .chip-flow{stroke:#72e6c4;filter:drop-shadow(0 0 4px #72e6c477)}
+.chip-visual.chip-guide .chip-flow.second{stroke:#b2f2d9}
+.chip-visual.chip-guide .chip-node{stroke:#72e6c4}
+.chip-visual.chip-sentinel .chip-flow{stroke:#8aabff;filter:drop-shadow(0 0 4px #8aabff77)}
+.chip-visual.chip-sentinel .chip-flow.second{stroke:#c6b0ff}
+.chip-visual.chip-sentinel .chip-node{stroke:#8aabff}
+.chip-visual.chip-sentinel{border-color:#425681}
 .chip-visual .chip-node{fill:#0e2931;stroke:#75e0c9;stroke-width:1.5}
 .chip-visual .chip-label{fill:#c8e8e8;font-size:12px;font-weight:700;text-anchor:middle}
 .chip-visual .chip-caption{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#8fb9bb;font-size:10px;letter-spacing:.08em;margin-top:3px}
@@ -140,18 +148,20 @@ return svg;
 }
 function makeChipConnection(p){
  const wrap=elem('div','chip-visual');
+ const isGuide=p.id==='SGCC-G-003';
+ wrap.classList.add(isGuide?'chip-guide':'chip-sentinel');
  const ns='http://www.w3.org/2000/svg';
- const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 340 86');svg.setAttribute('role','img');svg.setAttribute('aria-label','김선우와 박성훈의 페어칩 센서 연결 상태 시각화');
+ const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 340 86');svg.setAttribute('role','img');svg.setAttribute('aria-label',isGuide?'김선우 페어칩 신호: 왼쪽에서 오른쪽으로 이동':'박성훈 페어칩 신호: 오른쪽에서 왼쪽으로 이동');
  for(let x=15;x<=325;x+=25){const line=document.createElementNS(ns,'line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1','10');line.setAttribute('y2','75');line.setAttribute('class','chip-grid');svg.append(line)}
  const defs=document.createElementNS(ns,'defs'),clip=document.createElementNS(ns,'clipPath');clip.setAttribute('id','chip-wave-clip');const rect=document.createElementNS(ns,'rect');rect.setAttribute('x','47');rect.setAttribute('y','0');rect.setAttribute('width','246');rect.setAttribute('height','86');clip.append(rect);defs.append(clip);svg.append(defs);
  const group=document.createElementNS(ns,'g');group.setAttribute('clip-path','url(#chip-wave-clip)');
  for(let k=0;k<2;k++){
   const path=document.createElementNS(ns,'path');path.setAttribute('class','chip-flow'+(k?' second':''));
   let d='';for(let x=0;x<=680;x+=2){const t=x/340;const y=43+(k?9:0)-(k?7:12)*Math.sin(t*Math.PI*8+.35)-(k?2:3)*Math.sin(t*Math.PI*16+.2);d+=(x===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(2)+' '}
-  path.setAttribute('d',d);const motion=document.createElementNS(ns,'animateTransform');motion.setAttribute('attributeName','transform');motion.setAttribute('type','translate');motion.setAttribute('from','-340 0');motion.setAttribute('to','0 0');motion.setAttribute('dur',k?'12s':'10s');motion.setAttribute('repeatCount','indefinite');path.append(motion);group.append(path)
+  path.setAttribute('d',d);const motion=document.createElementNS(ns,'animateTransform');motion.setAttribute('attributeName','transform');motion.setAttribute('type','translate');motion.setAttribute('from',isGuide?'-340 0':'0 0');motion.setAttribute('to',isGuide?'0 0':'-340 0');motion.setAttribute('dur',k?'12s':'10s');motion.setAttribute('repeatCount','indefinite');path.append(motion);group.append(path)
  }svg.append(group);
  for(const [x,t] of [[27,'G'],[313,'S']]){const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',x);circle.setAttribute('cy','43');circle.setAttribute('r','18');circle.setAttribute('class','chip-node');svg.append(circle);const label=document.createElementNS(ns,'text');label.setAttribute('x',x);label.setAttribute('y','47');label.setAttribute('class','chip-label');label.textContent=t;svg.append(label)}
- wrap.append(svg);const cap=elem('div','chip-caption');cap.append(elem('span','','KIM SUNWOO · GUIDE'),elem('span','','PARK SUNGHOON · SENTINEL'));wrap.append(cap);return wrap;
+ wrap.append(svg);const cap=elem('div','chip-caption');cap.append(elem('span','','KIM SUNWOO · GUIDE'),elem('span','','PARK SUNGHOON · SENTINEL'));wrap.append(cap);cap.append(elem('span','',isGuide?'GUIDE SIGNAL · LEFT → RIGHT':'SENTINEL SIGNAL · RIGHT → LEFT'));return wrap;
 }
 function makeMonitoringClock(){const bar=elem('div','monitor-clock');const label=elem('span','clock-label','● LIVE MONITORING · SIMULATED');const right=elem('span','');right.append(elem('span','','LAST SIGNAL UPDATE · '));const stamp=elem('strong','');stamp.setAttribute('data-monitor-time','');right.append(stamp);bar.append(label,right);updateMonitoringClock(bar);return bar}
 function updateMonitoringClock(root=document){const stamp=root.querySelector('[data-monitor-time]');if(!stamp)return;const now=new Date();stamp.textContent=new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now)}
